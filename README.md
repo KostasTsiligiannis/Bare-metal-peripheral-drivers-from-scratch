@@ -9,37 +9,37 @@ A production-oriented collection of **bare-metal device drivers** engineered fro
 ## Core Engineering Competencies
 
 ### 1. Low-Level MCU Architecture & Memory-Mapped I/O
-* **Register-Level Abstraction:** Direct manipulation of peripheral control, status, and data registers using `volatile`-qualified C structures mapped to physical bus addresses (`AHB`, `APB1`, `APB2`).
-* **Clock Tree & Power Management:** Configuration of internal/external oscillators (`HSI`, `HSE`), bus prescalers, peripheral clock gating (`RCC`), and hardware clock routing verification via Microcontroller Clock Output (`MCO`).
-* **Interrupt Architecture (NVIC & EXTI):** Configuration of Nested Vectored Interrupt Controller (`NVIC`) priority grouping, IRQ enable/disable masking, and External Interrupt (`EXTI`) edge-detection lines for deterministic event-driven execution.
-* **Hardware Timebase:** Bare-metal **Cortex-M4 SysTick** timer implementation providing deterministic millisecond resolution for protocol timeouts and inter-frame delays.
+* **Direct Hardware Control:** Interfacing directly with the silicon through memory-mapped structures and bit-level manipulation, eliminating opaque vendor abstractions in favor of predictable, cycle-accurate execution.
+* **System Clock & Bus Management:** Understanding how clock signals are generated, scaled, and routed across internal buses (`AHB`/`APB`)—balancing peripheral performance against power consumption and verifying clock integrity at the pin level.
+* **Hardware-Driven Concurrency (NVIC & EXTI):** Moving beyond sequential code by configuring hardware interrupt controllers, priority levels, and external pin triggers so the processor reacts deterministically to real-world events.
+* **Deterministic Timekeeping:** Leveraging the core system timer (`SysTick`) to establish a reliable hardware timebase for timeouts, scheduling, and protocol synchronization.
 
 ### 2. Peripheral Driver Architecture & Design Patterns
-* **Layered Firmware Design:** Clean separation between hardware register definitions, reusable peripheral driver APIs (`Init`, `DeInit`, `SendData`, `ReceiveData`, `IRQHandling`), and application-layer state machines.
-* **Blocking (Polling) & Non-Blocking (Interrupt-Driven) Modes:** Dual-mode driver implementations supporting both deterministic polling and asynchronous, interrupt-driven state machines to maximize CPU utilization.
-* **Robust Error Handling & Bus Recovery:** Hardware fault detection and recovery mechanisms for framing errors, overrun (`OVR`), arbitration loss, `NACK` responses, and bus-busy lockups.
+* **Scalable Layered Design:** Structuring firmware into distinct abstraction layers—separating silicon-specific register maps from reusable driver interfaces and application logic—so drivers remain modular, readable, and maintainable.
+* **Blocking vs. Non-Blocking Execution:** Designing dual-mode communication engines capable of both simple synchronous polling and asynchronous, interrupt-driven state machines that free up CPU cycles during data transfers.
+* **Protocol Resilience & Fault Recovery:** Anticipating real-world electrical and timing anomalies (bus lockups, missed acknowledgments, data overruns) and building self-recovering state machines rather than fragile happy-path code.
 
 ---
 
 ## Implemented Peripheral Drivers
 
-### GPIO & External Interrupts (EXTI)
-* **Capabilities:** Input, Output (Push-Pull / Open-Drain), Alternate Function multiplexing (`AF0`–`AF15`), Analog mode, internal Pull-Up/Pull-Down networks, and programmable output slew rates.
-* **Event-Driven Control:** Asynchronous hardware button/signal triggers mapped to `EXTI` lines with `NVIC` interrupt prioritization and pending-bit clearing.
+### General-Purpose I/O & External Interrupts (`GPIO` / `EXTI`)
+* **Electrical & Pin Multiplexing:** Configuring physical pins for digital signaling, open-drain wired-AND buses, analog sensing, and internal peripheral routing while managing drive strength, slew rates, and pull-up/pull-down states.
+* **Asynchronous Event Triggering:** Transforming external physical signals (switches, sensor data-ready lines) into immediate hardware interrupts with configurable edge sensitivity and priority arbitration.
 
-### SPI (Serial Peripheral Interface)
-* **Bus Topologies:** Full-Duplex, Half-Duplex, and Simplex communication in both Master and Slave roles.
-* **Protocol Configuration:** Programmable `CPOL`/`CPHA` clock modes, baud rate prescalers, 8-bit/16-bit data frames, MSB/LSB bit ordering, and Hardware (`NSS`) vs. Software (`SSM`/`SSI`) slave management.
-* **Bidirectional Command-Response:** Multi-byte command framing, slave acknowledgment handshakes, and asynchronous interrupt-driven slave data retrieval.
+### Serial Peripheral Interface (`SPI`)
+* **Synchronous High-Speed Framing:** Architecting full-duplex, half-duplex, and simplex serial links by aligning clock polarity, phase, bit ordering, and frame sizes between Master and Slave devices.
+* **Bus Arbitration & Slave Management:** Implementing both hardware-enforced and software-controlled chip-select schemes to manage bus ownership cleanly.
+* **Command-Response & Non-Blocking Transfers:** Building multi-step sensor communication protocols (command framing, dummy-byte clock generation, and status handshakes) alongside interrupt-driven data reception.
 
-### I2C (Inter-Integrated Circuit — STM32 I2C v2 Architecture)
-* **Timing & Speed Modes:** Standard Mode (`100 kHz`) and Fast Mode (`400 kHz`) configured via `I2C_TIMINGR` prescalers, setup/hold times, and analog/digital noise filters.
-* **Atomic Bus Transactions:** Hardware-managed byte counting (`NBYTES`), automatic stop generation (`AUTOEND`), and **Repeated Start (`Sr`)** sequences for multi-stage register/command reads without releasing bus ownership.
-* **Dual-Role & Interrupt Support:** Master and Slave transmit/receive state machines with `NACK` detection, clock stretching compliance, and non-blocking interrupt-driven transfers.
+### Inter-Integrated Circuit (`I2C` — STM32 v2 Architecture)
+* **Timing Synthesis & Signal Integrity:** Translating protocol specifications (`100 kHz` Standard / `400 kHz` Fast Mode) into precise hardware timing parameters, noise filtering, and hold-time adjustments to prevent open-drain bus glitches.
+* **Atomic Bus Transactions:** Executing multi-phase reads and writes using **Repeated Start (`Sr`)** conditions—allowing the Master to switch from writing a register address to reading data without surrendering bus control.
+* **Clock Stretching & State-Machine Automation:** Handling slave-driven clock stretching, automated byte counting, and interrupt-driven Master/Slave state transitions under real-world bus error conditions.
 
-### USART / UART (Universal Synchronous/Asynchronous Receiver-Transmitter)
-* **Serial Framing:** Configurable baud rates (fractional baud rate generation), word lengths (8/9-bit), parity control (Even/Odd/None), and stop bits.
-* **Flow Control & Modes:** Full-duplex asynchronous communication, hardware flow control (`RTS`/`CTS`), and interrupt-driven ring-buffer/state-machine reception.
+### Universal Synchronous/Asynchronous Receiver-Transmitter (`USART` / `UART`)
+* **Asynchronous Serial Framing:** Achieving reliable clockless communication through fractional baud-rate generation, configurable data widths, parity checking, and stop-bit framing.
+* **Flow Control & Buffered I/O:** Preventing data loss during high-throughput bursts using hardware flow control (`RTS`/`CTS`) and interrupt-driven asynchronous reception.
 
 ---
 
