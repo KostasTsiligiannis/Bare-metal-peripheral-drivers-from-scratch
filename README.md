@@ -43,14 +43,17 @@ A production-oriented collection of **bare-metal device drivers** engineered fro
 
 ---
 
-## Hardware Validation & Debugging Methodology
+## Hardware Validation, Signal Integrity & Debugging Philosophy
 
-Writing peripheral drivers without physical verification leaves subtle timing and electrical issues undetected. Throughout this repository, firmware development follows a disciplined **hardware-in-the-loop validation workflow** modeled after industrial bring-up practices:
+Writing driver code is only half of embedded systems engineering; proving that it behaves reliably under real electrical and timing constraints is what makes firmware production-ready. Rather than relying on software simulators or intrusive `printf` statements, this project follows a disciplined **hardware bring-up and on-chip debugging methodology**:
 
-* **Physical-Layer Protocol Verification:** Rather than relying solely on software logs, bus activity is captured directly on the physical lines using a **Logic Analyzer (PulseView / sigrok)**. Decoding waveforms at the signal level verifies exact frame alignment, clock polarity/phase synchronization, acknowledgment handshakes, and true `START` / `Repeated START` / `STOP` transitions.
-* **Signal Integrity & Timing Margins:** Developing reliable low-level drivers requires understanding the electrical reality of shared buses—such as open-drain rise/fall times, pull-up loading, and bus handoff transitions. Analyzing waveforms exposes subtle timing violations and transition glitches early, allowing precise tuning of setup and hold margins.
-* **Cross-Platform Interoperability Testing:** True protocol compliance is proven when two distinct architectures communicate seamlessly. Using an **ESP32** as an independent external slave node tests the STM32 drivers against real-world slave behavior—including clock stretching, asynchronous command-response latency, and zero-delay **Repeated Start** handoffs.
-* **Register-Level On-Chip Debugging:** Leveraging **SWD (ST-LINK)** and live peripheral register inspection to trace state-machine transitions, verify interrupt flag clearing sequences, and diagnose bus fault conditions directly in hardware.
+* **Protocol Verification on the Wire:** Using a multi-channel logic analyzer (**PulseView / sigrok**) to inspect physical bus activity—verifying frame alignment, clock polarity/phase, handshake acknowledgments, and transaction boundaries (`START`, `Repeated START`, `STOP`) against protocol specifications.
+* **Signal Integrity & Timing Awareness:** Treating digital buses as analog transmission lines—observing rise/fall times, pull-up behavior, and bus handoff transitions, and adjusting hardware timing parameters (such as data hold and setup times) to prevent glitches and race conditions.
+* **Cross-Platform Interoperability Testing:** Validating driver compliance against an independent target architecture (**ESP32** acting as an external slave node) rather than testing in isolation, ensuring the protocol implementation handles real-world slave latency, clock stretching, and buffer constraints.
+* **Silicon-Level On-Chip Debugging (SWD / GDB):** Leveraging **STM32CubeIDE's** low-level inspection views over **ST-LINK (SWD)** to diagnose firmware and hardware behavior in real time:
+  * **Special Function Registers (`SFRs`):** Verifying bit-level configuration of peripheral registers (`RCC`, `GPIO`, `SPI`, `I2C`, `NVIC`) directly on the silicon after initialization and during state transitions.
+  * **Live `Expressions` & `Memory Browser`:** Inspecting driver handle structures, ring buffers, and raw memory-mapped address spaces across breakpoints without altering execution timing.
+  * **Core `Registers` & `Disassembly`:** Auditing ARM Cortex-M4 core registers (`SP`, `LR`, `PC`, `xPSR`) and generated assembly instructions to verify `volatile` memory accesses, interrupt stacking, and compiler optimization behavior.
 
 ---
 
