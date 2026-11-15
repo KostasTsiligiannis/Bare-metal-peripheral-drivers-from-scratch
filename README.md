@@ -43,14 +43,14 @@ A production-oriented collection of **bare-metal device drivers** engineered fro
 
 ---
 
-## Hardware Validation, Signal Integrity & Debugging
+## Hardware Validation & Debugging Methodology
 
-Every driver is rigorously verified on physical hardware rather than simulators, reflecting real-world industrial firmware bring-up practices:
+Writing peripheral drivers without physical verification leaves subtle timing and electrical issues undetected. Throughout this repository, firmware development follows a disciplined **hardware-in-the-loop validation workflow** modeled after industrial bring-up practices:
 
-* **Protocol Decoding & Timing Analysis:** Multi-channel logic analyzer captures (**PulseView / sigrok**) used to inspect frame alignment, clock duty cycles, `ACK`/`NACK` bits, `START`/`Repeated START`/`STOP` conditions, and inter-byte timing.
-* **Signal Integrity Engineering:** Diagnosed and eliminated open-drain SDA bus handoff glitches (~300 ns positive spikes prior to the 9th clock cycle) by analyzing rise/fall parasitics and tuning `I2C_TIMINGR.SDADEL` hold timing.
-* **Cross-Platform Interoperability (Master-Slave Testbench):** Validated protocol compliance against an **ESP32** target acting as an external peripheral slave, including native **ESP-IDF** hardware FIFO manipulation to support zero-delay Repeated Start transactions.
-* **On-Chip Debugging:** Live register inspection, peripheral state verification, and fault diagnostics via **SWD (ST-LINK)** and GDB.
+* **Physical-Layer Protocol Verification:** Rather than relying solely on software logs, bus activity is captured directly on the physical lines using a **Logic Analyzer (PulseView / sigrok)**. Decoding waveforms at the signal level verifies exact frame alignment, clock polarity/phase synchronization, acknowledgment handshakes, and true `START` / `Repeated START` / `STOP` transitions.
+* **Signal Integrity & Timing Margins:** Developing reliable low-level drivers requires understanding the electrical reality of shared buses—such as open-drain rise/fall times, pull-up loading, and bus handoff transitions. Analyzing waveforms exposes subtle timing violations and transition glitches early, allowing precise tuning of setup and hold margins.
+* **Cross-Platform Interoperability Testing:** True protocol compliance is proven when two distinct architectures communicate seamlessly. Using an **ESP32** as an independent external slave node tests the STM32 drivers against real-world slave behavior—including clock stretching, asynchronous command-response latency, and zero-delay **Repeated Start** handoffs.
+* **Register-Level On-Chip Debugging:** Leveraging **SWD (ST-LINK)** and live peripheral register inspection to trace state-machine transitions, verify interrupt flag clearing sequences, and diagnose bus fault conditions directly in hardware.
 
 ---
 
