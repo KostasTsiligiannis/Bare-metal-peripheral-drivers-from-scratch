@@ -1,0 +1,35 @@
+# STM32CubeIDE & GCC build artifacts
+Debug/
+Release/
+*.o
+*.d
+*.su
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+*.launch
+.cproject
+.project
+.settings/
+
+# Arduino / ESP32 build artifacts
+*.ino.cpp
+*.ino.bin
+*.ino.elf
+*.ino.map
+build/
+.arduino15/
+
+# OS & editor temporary files
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+*~
+
+# Excluded files & folders
+trying_swv.cfg
+trying_swv.ioc
+Basics/
