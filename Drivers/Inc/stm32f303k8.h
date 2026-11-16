@@ -249,7 +249,8 @@ typedef struct
 #define DRV_IRQ_NO_EXTI9_5		23
 #define DRV_IRQ_NO_EXTI15_10	40
 #define DRV_IRQ_NO_SPI1         35
-
+#define IRQ_NO_I2C1_EV    	 	31
+#define IRQ_NO_I2C1_ER    		32
 // Generic macros
 #define ENABLE				1
 #define DISABLE				0
