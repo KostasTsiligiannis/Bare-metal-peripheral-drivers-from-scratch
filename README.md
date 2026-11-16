@@ -32,7 +32,7 @@ A production-oriented collection of **bare-metal device drivers** engineered fro
 * **Bus Arbitration & Slave Management:** Implementing both hardware-enforced and software-controlled chip-select schemes to manage bus ownership cleanly.
 * **Command-Response & Non-Blocking Transfers:** Building multi-step sensor communication protocols (command framing, dummy-byte clock generation, and status handshakes) alongside interrupt-driven data reception.
 
-### Inter-Integrated Circuit (`I2C` — STM32 v2 Architecture)
+### Inter-Integrated Circuit (`I2C`)
 * **Timing Synthesis & Signal Integrity:** Translating protocol specifications (`100 kHz` Standard / `400 kHz` Fast Mode) into precise hardware timing parameters, noise filtering, and hold-time adjustments to prevent open-drain bus glitches.
 * **Atomic Bus Transactions:** Executing multi-phase reads and writes using **Repeated Start (`Sr`)** conditions—allowing the Master to switch from writing a register address to reading data without surrendering bus control.
 * **Clock Stretching & State-Machine Automation:** Handling slave-driven clock stretching, automated byte counting, and interrupt-driven Master/Slave state transitions under real-world bus error conditions.
