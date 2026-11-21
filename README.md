@@ -34,7 +34,7 @@ Bare-metal-peripheral-drivers-from-scratch/
 │
 ├── uart_case/                         # Interrupt-driven USART echo & character case-conversion application
 └── uart_only_send/                    # Blocking USART transmission & fractional baud-rate validation
-
+```
 ---
 
 ## Core Engineering Competencies
