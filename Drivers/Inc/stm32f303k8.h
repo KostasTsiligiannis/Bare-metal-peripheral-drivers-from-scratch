@@ -121,6 +121,8 @@ typedef struct
 
 #define DRV_SPI1 		((SPI1_RegDef_t*)DRV_SPI1_BASEADDR)
 #define DRV_I2C1        ((I2C_RegDef_t*)DRV_I2C1_BASEADDR)
+#define DRV_USART1      ((USART_RegDef_t*)DRV_USART1_BASEADDR)
+
 /**
  * @brief Reset and Clock Control (RCC)
  */
@@ -199,6 +201,24 @@ typedef struct
   __vo uint32_t TXDR;       /*!< I2C Transmit Data Register,    Address offset: 0x28 */
 } I2C_RegDef_t;
 
+/**
+ * @brief USART register definition structure.
+ */
+typedef struct
+{
+    __vo uint32_t CR1;   /*!< USART Control Register 1 (UE, RE, TE, RXNEIE, TXEIE, TCIE, etc.), Offset: 0x00 */
+    __vo uint32_t CR2;   /*!< USART Control Register 2 (STOP, CLKEN, CPOL, CPHA, swap/inv, etc.), Offset: 0x04 */
+    __vo uint32_t CR3;   /*!< USART Control Register 3 (RTS, CTS, EIE, DMAR, DMAT, ONEBIT, etc.), Offset: 0x08 */
+    __vo uint32_t BRR;   /*!< USART Baud Rate Register (BRR[15:0] baud rate divider), Offset: 0x0C */
+    __vo uint32_t GTPR;  /*!< USART Guard Time and Prescaler Register (PSC[7:0], GT[15:8]), Offset: 0x10 */
+    __vo uint32_t RTOR;  /*!< USART Receiver Timeout Register (RTO[23:0], BLEN[31:24]), Offset: 0x14 */
+    __vo uint32_t RQR;   /*!< USART Request Register (write-1 pulse flags: ABRRQ, SBKRQ, RXFRQ, TXFRQ), Offset: 0x18 */
+    __vo uint32_t ISR;   /*!< USART Interrupt and Status Register (RXNE, TC, TXE, ORE, FE, NE, etc.), Offset: 0x1C */
+    __vo uint32_t ICR;   /*!< USART Interrupt Flag Clear Register (write-1-to-clear flags), Offset: 0x20 */
+    __vo uint32_t RDR;   /*!< USART Receive Data Register (read-only received data byte/word), Offset: 0x24 */
+    __vo uint32_t TDR;   /*!< USART Transmit Data Register (write-only transmit data byte/word), Offset: 0x28 */
+} USART_RegDef_t;
+
 #define DRV_RCC ((RCC_RegDef_t*)DRV_RCC_BASEADDR)
 
 #define DRV_EXTI  ((EXTI_RegDef_t*)DRV_EXTI_BASEADDR)
@@ -251,6 +271,8 @@ typedef struct
 #define DRV_IRQ_NO_SPI1         35
 #define IRQ_NO_I2C1_EV    	 	31
 #define IRQ_NO_I2C1_ER    		32
+#define IRQ_NO_USART1	    	37
+
 // Generic macros
 #define ENABLE				1
 #define DISABLE				0
@@ -268,6 +290,13 @@ typedef struct
 #define DRV_GPIOD_PCLK_DI()    (DRV_RCC->AHBENR &= ~(1 << 20))
 #define DRV_GPIOF_PCLK_DI()    (DRV_RCC->AHBENR &= ~(1 << 22))
 
+// Clock disable macros for SPI1x peripheral //
+#define DRV_SPI1_PCLK_DI()      (DRV_RCC->APB2ENR &= ~(1 << 12))
+// Clock disable macros for I2C1x peripheral //
+#define DRV_I2C1_PCLK_DI()   	(DRV_RCC->APB1ENR &= ~(1 << 21))
+// Clock disable macros for USART1x peripheral //
+#define DRV_USART1_PCLK_DI()    (DRV_RCC->APB2ENR &= ~(1 << 14))
+
 //Macros to reset GPIOx peripherals
 #define DRV_GPIOA_REG_RESET()	do{(DRV_RCC -> AHBRSTR |= (1 << 17)); (DRV_RCC -> AHBRSTR &= ~(1 << 17));} while(0)
 #define DRV_GPIOB_REG_RESET()	do{(DRV_RCC -> AHBRSTR |= (1 << 18)); (DRV_RCC -> AHBRSTR &= ~(1 << 18));} while(0)
@@ -280,6 +309,8 @@ typedef struct
 
 //Macros to reset I2C1 peripheral
 #define DRV_I2C1_REG_RESET() 	do{(DRV_RCC -> APB1RSTR |= (1 << 21)); (DRV_RCC -> APB2RSTR &= ~(1 << 21));} while(0)
+//Macros to reset USART peripheral
+#define DRV_USART1_REG_RESET() 	do{(DRV_RCC -> APB2RSTR |= (1 << 22)); (DRV_RCC -> APB2RSTR &= ~(1 << 22));} while(0)
 
 /******************************************************************************************
  *Bit position definitions of SPI peripheral
@@ -456,8 +487,140 @@ typedef struct
 #define DRV_I2C_TXDR_TXDATA_POS        0              /* Transmit Data Position */
 #define DRV_I2C_TXDR_TXDATA_MASK       (0xFF << 0)    /* Transmit Data Mask */
 
+/**
+ ******************************************************************************
+ * @brief   Shifted bit-mask definitions for the STM32F303K8 USART peripheral
+ *          (USART1 / USART2 / USART3) based on RM0316.
+ ******************************************************************************
+ */
+
+/******************************************************************************************
+ * Bit mask definitions of USART peripheral
+ ******************************************************************************************/
+
+/*
+ * Bit mask definitions USART_CR1
+ */
+#define DRV_USART_CR1_UE            (1 << 0)      /* USART enable */
+#define DRV_USART_CR1_UESM          (1 << 1)      /* USART enable in Stop mode */
+#define DRV_USART_CR1_RE            (1 << 2)      /* Receiver enable */
+#define DRV_USART_CR1_TE            (1 << 3)      /* Transmitter enable */
+#define DRV_USART_CR1_IDLEIE        (1 << 4)      /* IDLE interrupt enable */
+#define DRV_USART_CR1_RXNEIE        (1 << 5)      /* RXNE (read data register not empty) interrupt enable */
+#define DRV_USART_CR1_TCIE          (1 << 6)      /* Transmission complete interrupt enable */
+#define DRV_USART_CR1_TXEIE         (1 << 7)      /* TXE (transmit data register empty) interrupt enable */
+#define DRV_USART_CR1_PEIE          (1 << 8)      /* PE (parity error) interrupt enable */
+#define DRV_USART_CR1_PS            (1 << 9)      /* Parity selection (0: even, 1: odd) */
+#define DRV_USART_CR1_PCE           (1 << 10)     /* Parity control enable */
+#define DRV_USART_CR1_WAKE          (1 << 11)     /* Receiver wakeup method */
+#define DRV_USART_CR1_M0            (1 << 12)     /* Word length bit 0 (M[1:0] frame size selection) */
+#define DRV_USART_CR1_MME           (1 << 13)     /* Mute mode enable */
+#define DRV_USART_CR1_CMIE          (1 << 14)     /* Character match interrupt enable */
+#define DRV_USART_CR1_OVER8         (1 << 15)     /* Oversampling mode (0: oversampling by 16, 1: by 8) */
+#define DRV_USART_CR1_DEDT_POS      16            /* Driver Enable de-assertion time bit offset */
+#define DRV_USART_CR1_DEAT_POS      21            /* Driver Enable assertion time bit offset */
+#define DRV_USART_CR1_RTOIE         (1 << 26)     /* Receiver timeout interrupt enable */
+#define DRV_USART_CR1_EOBIE         (1 << 27)     /* End of block interrupt enable */
+#define DRV_USART_CR1_M1            (1 << 28)     /* Word length bit 1 */
+
+/*
+ * Bit mask definitions USART_CR2
+ */
+#define DRV_USART_CR2_ADDM7         (1 << 4)      /* 7-bit/4-bit address detection mode */
+#define DRV_USART_CR2_LBDL          (1 << 5)      /* LIN break detection length */
+#define DRV_USART_CR2_LBDIE         (1 << 6)      /* LIN break detection interrupt enable */
+#define DRV_USART_CR2_LBCL          (1 << 8)      /* Last bit clock pulse (synchronous mode) */
+#define DRV_USART_CR2_CPHA          (1 << 9)      /* Clock phase (synchronous mode) */
+#define DRV_USART_CR2_CPOL          (1 << 10)     /* Clock polarity (synchronous mode) */
+#define DRV_USART_CR2_CLKEN         (1 << 11)     /* Clock enable (synchronous mode) */
+#define DRV_USART_CR2_STOP_POS      12            /* STOP bits field offset (bits 13:12) */
+#define DRV_USART_CR2_LINEN         (1 << 14)     /* LIN mode enable */
+#define DRV_USART_CR2_SWAP          (1 << 15)     /* Swap TX/RX pins */
+#define DRV_USART_CR2_RXINV         (1 << 16)     /* RX pin active level inversion */
+#define DRV_USART_CR2_TXINV         (1 << 17)     /* TX pin active level inversion */
+#define DRV_USART_CR2_DATAINV       (1 << 18)     /* Binary data inversion */
+#define DRV_USART_CR2_MSBFIRST      (1 << 19)     /* Most significant bit first */
+#define DRV_USART_CR2_ABREN         (1 << 20)     /* Auto baud rate enable */
+#define DRV_USART_CR2_ABRMOD_POS    21            /* Auto baud rate mode field offset (bits 22:21) */
+#define DRV_USART_CR2_RTOEN         (1 << 23)     /* Receiver timeout enable */
+#define DRV_USART_CR2_ADD_POS       24            /* USART address / character match field offset (bits 31:24) */
+
+/*
+ * Bit mask definitions USART_CR3
+ */
+#define DRV_USART_CR3_EIE           (1 << 0)      /* Error interrupt enable (framing, overrun, noise) */
+#define DRV_USART_CR3_IREN          (1 << 1)      /* IrDA mode enable */
+#define DRV_USART_CR3_IRLP          (1 << 2)      /* IrDA low-power mode */
+#define DRV_USART_CR3_HDSEL         (1 << 3)      /* Half-duplex selection */
+#define DRV_USART_CR3_NACK          (1 << 4)      /* Smartcard NACK enable */
+#define DRV_USART_CR3_SCEN          (1 << 5)      /* Smartcard mode enable */
+#define DRV_USART_CR3_DMAR          (1 << 6)      /* DMA enable receiver */
+#define DRV_USART_CR3_DMAT          (1 << 7)      /* DMA enable transmitter */
+#define DRV_USART_CR3_RTSE          (1 << 8)      /* RTS enable (hardware flow control) */
+#define DRV_USART_CR3_CTSE          (1 << 9)      /* CTS enable (hardware flow control) */
+#define DRV_USART_CR3_CTSIE         (1 << 10)     /* CTS interrupt enable */
+#define DRV_USART_CR3_ONEBIT        (1 << 11)     /* One sample bit method enable */
+#define DRV_USART_CR3_OVRDIS        (1 << 12)     /* Overrun disable (0: flag error on ORE, 1: overwrite) */
+#define DRV_USART_CR3_DDRE          (1 << 13)     /* DMA disable on reception error */
+#define DRV_USART_CR3_DEM           (1 << 14)     /* Driver enable mode (RS-485 DE pin control) */
+#define DRV_USART_CR3_DEP           (1 << 15)     /* Driver enable polarity selection */
+#define DRV_USART_CR3_WUS_POS       20            /* Wakeup from Stop mode interrupt flag offset (bits 21:20) */
+#define DRV_USART_CR3_WUFIE         (1 << 22)     /* Wakeup from Stop mode interrupt enable */
+
+/*
+ * Bit mask definitions USART_ISR
+ */
+#define DRV_USART_ISR_PE            (1 << 0)      /* Parity error flag */
+#define DRV_USART_ISR_FE            (1 << 1)      /* Framing error flag */
+#define DRV_USART_ISR_NF            (1 << 2)      /* Noise detected flag */
+#define DRV_USART_ISR_ORE           (1 << 3)      /* Overrun error flag */
+#define DRV_USART_ISR_IDLE          (1 << 4)      /* Idle line detected flag */
+#define DRV_USART_ISR_RXNE          (1 << 5)      /* Read data register not empty */
+#define DRV_USART_ISR_TC            (1 << 6)      /* Transmission complete */
+#define DRV_USART_ISR_TXE           (1 << 7)      /* Transmit data register empty */
+#define DRV_USART_ISR_LBDF          (1 << 8)      /* LIN break detection flag */
+#define DRV_USART_ISR_CTSIF         (1 << 9)      /* CTS interrupt flag */
+#define DRV_USART_ISR_CTS           (1 << 10)     /* CTS flag */
+#define DRV_USART_ISR_RTOF          (1 << 11)     /* Receiver timeout flag */
+#define DRV_USART_ISR_EOBF          (1 << 12)     /* End of block flag */
+#define DRV_USART_ISR_ABRE          (1 << 14)     /* Auto baud rate error */
+#define DRV_USART_ISR_ABRF          (1 << 15)     /* Auto baud rate flag */
+#define DRV_USART_ISR_BUSY          (1 << 16)     /* Busy flag */
+#define DRV_USART_ISR_CMF           (1 << 17)     /* Character match flag */
+#define DRV_USART_ISR_SBKF          (1 << 18)     /* Send break flag */
+#define DRV_USART_ISR_RWU           (1 << 19)     /* Receiver wakeup from Mute mode */
+#define DRV_USART_ISR_WUF           (1 << 20)     /* Wakeup from Stop mode flag */
+#define DRV_USART_ISR_TEACK         (1 << 21)     /* Transmit enable acknowledge flag */
+#define DRV_USART_ISR_REACK         (1 << 22)     /* Receive enable acknowledge flag */
+
+/*
+ * Bit mask definitions USART_ICR (write-1-to-clear flags)
+ */
+#define DRV_USART_ICR_PECF          (1 << 0)      /* Parity error clear flag */
+#define DRV_USART_ICR_FECF          (1 << 1)      /* Framing error clear flag */
+#define DRV_USART_ICR_NCF           (1 << 2)      /* Noise detected clear flag */
+#define DRV_USART_ICR_ORECF         (1 << 3)      /* Overrun error clear flag */
+#define DRV_USART_ICR_IDLECF        (1 << 4)      /* Idle line detected clear flag */
+#define DRV_USART_ICR_TCCF          (1 << 6)      /* Transmission complete clear flag */
+#define DRV_USART_ICR_LBDCF         (1 << 8)      /* LIN break detection clear flag */
+#define DRV_USART_ICR_CTSCF         (1 << 9)      /* CTS interrupt clear flag */
+#define DRV_USART_ICR_RTOCF         (1 << 11)     /* Receiver timeout clear flag */
+#define DRV_USART_ICR_EOBCF         (1 << 12)     /* End of block clear flag */
+#define DRV_USART_ICR_CMCF          (1 << 17)     /* Character match clear flag */
+#define DRV_USART_ICR_WUCF          (1 << 20)     /* Wakeup from Stop mode clear flag */
+
+/*
+ * Bit field shift and mask definitions USART_RDR / USART_TDR (RM0316)
+ */
+#define DRV_USART_RDR_RDR_POS       0             /* Received data field offset (bits 8:0) */
+#define DRV_USART_RDR_RDR_MASK      0x01FF        /* 9-bit receive data mask including parity bit */
+#define DRV_USART_TDR_TDR_POS       0             /* Transmit data field offset (bits 8:0) */
+#define DRV_USART_TDR_TDR_MASK      0x01FF        /* 9-bit transmit data mask including parity bit */
+
 #include "stm32f303k8_gpio_driver.h"
 #include "stm32f303k8_spi_driver.h"
 #include "stm32f303k8_i2c_driver.h"
+#include "stm32f303k8_usart_driver.h"
+#include "stm32f303k8_rcc_driver.h"
 
 #endif /* INC_STM32F303K8_H_ */

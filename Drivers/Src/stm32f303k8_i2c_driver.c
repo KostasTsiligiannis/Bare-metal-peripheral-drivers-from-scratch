@@ -5,8 +5,8 @@
 /* Internal & public function prototypes */
 static void I2C_ExecuteAddressPhaseWrite(I2C_RegDef_t *pI2Cx, uint8_t SlaveAddr, uint32_t Len, uint8_t Sr);
 static void I2C_ExecuteAddressPhaseRead(I2C_RegDef_t *pI2Cx, uint8_t SlaveAddr, uint32_t Len, uint8_t Sr);
-static void I2C_CloseSendData(I2C_Handle_t *pI2CHandle);
-static void I2C_CloseReceiveData(I2C_Handle_t *pI2CHandle);
+void I2C_CloseSendData(I2C_Handle_t *pI2CHandle);
+void I2C_CloseReceiveData(I2C_Handle_t *pI2CHandle);
 
 void I2C_MasterSendData(I2C_Handle_t *pI2CHandle, uint8_t *pTxbuffer, uint32_t Len, uint8_t SlaveAddr, uint8_t Sr);
 void I2C_MasterReceiveData(I2C_Handle_t *pI2CHandle, uint8_t *pRxbuffer, uint32_t Len, uint8_t SlaveAddr, uint8_t Sr);
@@ -27,7 +27,7 @@ void I2C_PeriClockControl(I2C_RegDef_t *pI2Cx, uint8_t EnorDi)
     }
     else
     {
-        /* Optional: add clock disable support if power gating is required */
+    	DRV_I2C1_PCLK_DI();
     }
 }
 
@@ -70,14 +70,13 @@ void I2C_Init(I2C_Handle_t *pI2CHandle)
     I2C_PeripheralControl(pI2CHandle->pI2Cx, ENABLE);
 }
 
-void I2C_DeInit(I2C_Handle_t *pI2CHandle)
+void I2C_DeInit(I2C_RegDef_t *pI2Cx)
 {
-    if (pI2CHandle->pI2Cx == DRV_I2C1)
+    if (pI2Cx == DRV_I2C1)
     {
         DRV_I2C1_REG_RESET();
     }
 }
-
 /* ---------------------------------------------------------------------------
  * Status & Control Helpers
  * --------------------------------------------------------------------------- */
@@ -296,20 +295,27 @@ uint8_t I2C_MasterSendDataIT(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint3
 
     if ((busystate != I2C_BUSY_IN_TX) && (busystate != I2C_BUSY_IN_RX))
     {
-        /* Store transfer context in handle */
+        /* If not continuing from a Repeated Start (TC == 0), wait until bus is free */
+        if (!I2C_GetFlagStatus(pI2CHandle->pI2Cx, DRV_I2C_ISR_TC))
+        {
+            while (I2C_GetFlagStatus(pI2CHandle->pI2Cx, DRV_I2C_ISR_BUSY));
+        }
+
         pI2CHandle->pTxBuffer = pTxBuffer;
         pI2CHandle->TxLen = Len;
         pI2CHandle->TxRxState = I2C_BUSY_IN_TX;
         pI2CHandle->DevAddr = SlaveAddr;
         pI2CHandle->Sr = Sr;
 
-        /* Program CR2 transfer parameters before issuing START */
+        /* Program CR2 (SADD, NBYTES, RD_WRN=0, AUTOEND per Sr) before START */
         I2C_ExecuteAddressPhaseWrite(pI2CHandle->pI2Cx, SlaveAddr, Len, Sr);
 
-        /* Enable TX, transfer completion, NACK, STOP, and error interrupts in CR1 */
-        pI2CHandle->pI2Cx->CR1 |= (DRV_I2C_CR1_TXIE | DRV_I2C_CR1_TCIE | DRV_I2C_CR1_NACKIE | DRV_I2C_CR1_STOPIE | DRV_I2C_CR1_ERRIE);
+        /* Enable TX, TC, NACK, STOP, and Error interrupts in CR1 */
+        pI2CHandle->pI2Cx->CR1 |= (DRV_I2C_CR1_TXIE | DRV_I2C_CR1_TCIE |
+                                    DRV_I2C_CR1_NACKIE | DRV_I2C_CR1_STOPIE |
+                                    DRV_I2C_CR1_ERRIE);
 
-        /* Generate START condition to begin the transaction */
+        /* Generate START (or Repeated START if TC was set) */
         pI2CHandle->pI2Cx->CR2 |= DRV_I2C_CR2_START;
     }
 
@@ -322,7 +328,12 @@ uint8_t I2C_MasterReceiveDataIT(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, ui
 
     if ((busystate != I2C_BUSY_IN_TX) && (busystate != I2C_BUSY_IN_RX))
     {
-        /* Store transfer context in handle */
+        /* If not continuing from a Repeated Start (TC == 0), wait until bus is free */
+        if (!I2C_GetFlagStatus(pI2CHandle->pI2Cx, DRV_I2C_ISR_TC))
+        {
+            while (I2C_GetFlagStatus(pI2CHandle->pI2Cx, DRV_I2C_ISR_BUSY));
+        }
+
         pI2CHandle->pRxBuffer = pRxBuffer;
         pI2CHandle->RxLen = Len;
         pI2CHandle->TxRxState = I2C_BUSY_IN_RX;
@@ -330,13 +341,15 @@ uint8_t I2C_MasterReceiveDataIT(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, ui
         pI2CHandle->DevAddr = SlaveAddr;
         pI2CHandle->Sr = Sr;
 
-        /* Program CR2 transfer parameters before issuing START */
+        /* Program CR2 (SADD, NBYTES, RD_WRN=1, AUTOEND per Sr) before START */
         I2C_ExecuteAddressPhaseRead(pI2CHandle->pI2Cx, SlaveAddr, Len, Sr);
 
-        /* Enable RX, transfer completion, NACK, STOP, and error interrupts in CR1 */
-        pI2CHandle->pI2Cx->CR1 |= (DRV_I2C_CR1_RXIE | DRV_I2C_CR1_TCIE | DRV_I2C_CR1_NACKIE | DRV_I2C_CR1_STOPIE | DRV_I2C_CR1_ERRIE);
+        /* Enable RX, TC, NACK, STOP, and Error interrupts in CR1 */
+        pI2CHandle->pI2Cx->CR1 |= (DRV_I2C_CR1_RXIE | DRV_I2C_CR1_TCIE |
+                                    DRV_I2C_CR1_NACKIE | DRV_I2C_CR1_STOPIE |
+                                    DRV_I2C_CR1_ERRIE);
 
-        /* Generate START condition to begin the transaction */
+        /* Generate START (or Repeated START if TC was set) */
         pI2CHandle->pI2Cx->CR2 |= DRV_I2C_CR2_START;
     }
 
@@ -346,7 +359,7 @@ uint8_t I2C_MasterReceiveDataIT(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, ui
 /* ---------------------------------------------------------------------------
  * Transfer Cleanup Helpers
  * --------------------------------------------------------------------------- */
-static void I2C_CloseSendData(I2C_Handle_t *pI2CHandle)
+void I2C_CloseSendData(I2C_Handle_t *pI2CHandle)
 {
     /* Disable TX/event interrupt sources associated with transmission */
     pI2CHandle->pI2Cx->CR1 &= ~(DRV_I2C_CR1_TXIE | DRV_I2C_CR1_TCIE | DRV_I2C_CR1_NACKIE | DRV_I2C_CR1_STOPIE);
@@ -357,7 +370,7 @@ static void I2C_CloseSendData(I2C_Handle_t *pI2CHandle)
     pI2CHandle->TxLen = 0;
 }
 
-static void I2C_CloseReceiveData(I2C_Handle_t *pI2CHandle)
+void I2C_CloseReceiveData(I2C_Handle_t *pI2CHandle)
 {
     /* Disable RX/event interrupt sources associated with reception */
     pI2CHandle->pI2Cx->CR1 &= ~(DRV_I2C_CR1_RXIE | DRV_I2C_CR1_TCIE | DRV_I2C_CR1_NACKIE | DRV_I2C_CR1_STOPIE);
@@ -377,28 +390,43 @@ void I2C_EV_IRQHandling(I2C_Handle_t *pI2CHandle)
     uint32_t cr1 = pI2CHandle->pI2Cx->CR1;
     uint32_t isr = pI2CHandle->pI2Cx->ISR;
 
-    /* Handle TXIS: transmit data register ready for next byte */
-    if ((cr1 & DRV_I2C_CR1_TXIE) && (isr & DRV_I2C_ISR_TXIS))
-    {
-        if (pI2CHandle->TxRxState == I2C_BUSY_IN_TX && pI2CHandle->TxLen > 0)
-        {
-            pI2CHandle->pI2Cx->TXDR = *(pI2CHandle->pTxBuffer);
-            pI2CHandle->pTxBuffer++;
-            pI2CHandle->TxLen--;
-        }
-    }
+    /* Handle TXIS: transmit data register ready for next byte (Master TX or Slave TX) */
+	if ((cr1 & DRV_I2C_CR1_TXIE) && (isr & DRV_I2C_ISR_TXIS))
+	{
+		if (pI2CHandle->TxRxState == I2C_BUSY_IN_TX)
+		{
+			if (pI2CHandle->TxLen > 0)
+			{
+				pI2CHandle->pI2Cx->TXDR = *(pI2CHandle->pTxBuffer);
+				pI2CHandle->pTxBuffer++;
+				pI2CHandle->TxLen--;
+			}
+		}
+		else
+		{
+			/* Slave mode: master is requesting a byte from slave */
+			I2C_ApplicationEventCallback(pI2CHandle, I2C_EV_DATA_REQ);
+		}
+	}
 
-    /* Handle RXNE: receive data register holds a new byte */
-    if ((cr1 & DRV_I2C_CR1_RXIE) && (isr & DRV_I2C_ISR_RXNE))
-    {
-        if (pI2CHandle->TxRxState == I2C_BUSY_IN_RX && pI2CHandle->RxLen > 0)
-        {
-            *(pI2CHandle->pRxBuffer) = (uint8_t)pI2CHandle->pI2Cx->RXDR;
-            pI2CHandle->pRxBuffer++;
-            pI2CHandle->RxLen--;
-        }
-    }
-
+	/* Handle RXNE: receive data register holds a new byte (Master RX or Slave RX) */
+	if ((cr1 & DRV_I2C_CR1_RXIE) && (isr & DRV_I2C_ISR_RXNE))
+	{
+		if (pI2CHandle->TxRxState == I2C_BUSY_IN_RX)
+		{
+			if (pI2CHandle->RxLen > 0)
+			{
+				*(pI2CHandle->pRxBuffer) = (uint8_t)pI2CHandle->pI2Cx->RXDR;
+				pI2CHandle->pRxBuffer++;
+				pI2CHandle->RxLen--;
+			}
+		}
+		else
+		{
+			/* Slave mode: master sent a byte (e.g. command 0x51 / 0x52) to slave */
+			I2C_ApplicationEventCallback(pI2CHandle, I2C_EV_DATA_RCV);
+		}
+	}
     /* Handle NACKF: slave responded with NACK */
     if ((cr1 & DRV_I2C_CR1_NACKIE) && (isr & DRV_I2C_ISR_NACKF))
     {
@@ -431,22 +459,32 @@ void I2C_EV_IRQHandling(I2C_Handle_t *pI2CHandle)
         }
     }
 
-    /* Handle STOPF: STOP condition detected on the bus (e.g. AUTOEND = 1) */
-    if ((cr1 & DRV_I2C_CR1_STOPIE) && (isr & DRV_I2C_ISR_STOPF))
+    /* Handle ADDR: address match with OAR1 in slave mode */
+    if ((cr1 & DRV_I2C_CR1_ADDRIE) && (isr & DRV_I2C_ISR_ADDR))
     {
-        pI2CHandle->pI2Cx->ICR = DRV_I2C_ICR_STOPCF;
-
-        if (pI2CHandle->TxRxState == I2C_BUSY_IN_TX)
-        {
-            I2C_CloseSendData(pI2CHandle);
-            I2C_ApplicationEventCallback(pI2CHandle, I2C_EV_TX_CMPLT);
-        }
-        else if (pI2CHandle->TxRxState == I2C_BUSY_IN_RX)
-        {
-            I2C_CloseReceiveData(pI2CHandle);
-            I2C_ApplicationEventCallback(pI2CHandle, I2C_EV_RX_CMPLT);
-        }
+    	pI2CHandle->pI2Cx->ICR = DRV_I2C_ICR_ADDRCF;
     }
+
+	/* Handle STOPF: STOP condition detected on the bus */
+	if ((cr1 & DRV_I2C_CR1_STOPIE) && (isr & DRV_I2C_ISR_STOPF))
+	{
+		pI2CHandle->pI2Cx->ICR = DRV_I2C_ICR_STOPCF;
+
+		if (pI2CHandle->TxRxState == I2C_BUSY_IN_TX)
+		{
+			I2C_CloseSendData(pI2CHandle);
+			I2C_ApplicationEventCallback(pI2CHandle, I2C_EV_TX_CMPLT);
+		}
+		else if (pI2CHandle->TxRxState == I2C_BUSY_IN_RX)
+		{
+			I2C_CloseReceiveData(pI2CHandle);
+			I2C_ApplicationEventCallback(pI2CHandle, I2C_EV_RX_CMPLT);
+		}
+		else
+		{
+			I2C_ApplicationEventCallback(pI2CHandle, I2C_EV_STOP);
+		}
+	}
 }
 
 void I2C_ER_IRQHandling(I2C_Handle_t *pI2CHandle)
@@ -475,6 +513,30 @@ void I2C_ER_IRQHandling(I2C_Handle_t *pI2CHandle)
     {
         pI2CHandle->pI2Cx->ICR = DRV_I2C_ICR_OVRCF;
         I2C_ApplicationEventCallback(pI2CHandle, I2C_ERROR_OVR);
+    }
+}
+
+void I2C_SlaveSendData(I2C_RegDef_t *pI2Cx, uint8_t data)
+{
+    pI2Cx->TXDR = (uint32_t)(data & DRV_I2C_TXDR_TXDATA_MASK);
+}
+
+uint8_t I2C_SlaveReceiveData(I2C_RegDef_t *pI2Cx)
+{
+    return (uint8_t)(pI2Cx->RXDR & DRV_I2C_RXDR_RXDATA_MASK);
+}
+
+void I2C_SlaveEnableDisableCallbackEvents(I2C_RegDef_t *pI2Cx, uint8_t EnorDi)
+{
+    uint32_t slave_it_mask = (DRV_I2C_CR1_TXIE | DRV_I2C_CR1_RXIE | DRV_I2C_CR1_ADDRIE | DRV_I2C_CR1_NACKIE | DRV_I2C_CR1_STOPIE | DRV_I2C_CR1_ERRIE);
+
+    if (EnorDi == ENABLE)
+    {
+        pI2Cx->CR1 |= slave_it_mask;
+    }
+    else
+    {
+        pI2Cx->CR1 &= ~slave_it_mask;
     }
 }
 

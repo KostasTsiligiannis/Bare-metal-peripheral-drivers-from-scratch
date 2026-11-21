@@ -18,7 +18,7 @@ void SPI_PeriClockControl(SPI1_RegDef_t *pSPIx, uint8_t EnorDi)
     }
     else
     {
-        /* Clock disable can be implemented here */
+    	DRV_SPI1_PCLK_DI();
     }
 }
 /* -------------------------------------------------------
