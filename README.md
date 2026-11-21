@@ -1,11 +1,9 @@
 # Bare-metal-peripheral-drivers-from-scratch
 Bare-metal peripheral drivers (GPIO, SPI, I2C, USART) written from scratch in C for STM32F303K8 (ARM Cortex-M4) using RM0316, validated via Logic Analyzer &amp; ESP32 for master-slave communication.
-# Bare-Metal Peripheral Drivers & Protocol Stack (ARM Cortex-M4)
 
-![Language](https://shields.io)
-![MCU](https://shields.io)
-![Testbench](https://shields.io)
-![Tools](https://shields.io)
+---
+
+# Bare-Metal Peripheral Drivers & Protocol Stack (ARM Cortex-M4)
 
 A production-oriented collection of **bare-metal device drivers** engineered from the ground up in Embedded C for the **STM32F303K8 (ARM Cortex-M4F)** microcontroller. All low-level abstractions, memory maps, clock configurations, and interrupt service routines are developed directly from the **STM32F303 Reference Manual (RM0316)** and **ARMv7E-M Architecture Reference Manual**, eliminating any dependency on vendor HAL or middleware libraries.
 
@@ -21,9 +19,9 @@ Bare-metal-peripheral-drivers-from-scratch/
 ├── Src/                               # Main STM32 application entry points & active driver tests
 ├── Startup/                           # ARM Cortex-M4 startup assembly code & vector table definitions
 ├── STM32F303K8TX_FLASH.ld             # Custom linker script defining Flash/SRAM memory regions & sections
-├── ESP32_Slave_Testbench/             # Arduino/C++ sketches for the ESP32 acting as an external SPI/I2C Slave
+├── ESP32_Slave_Testbench/             # Arduino/C++ sketches for the ESP32 acting as an external SPI/I2C/UART Slave
 │
-├── Testing_clock_configurations/      # SYSCLK, AHB/APB prescaler tests & MCO pin clock verification
+├── Testing_clock_configurations/      # SYSCLK, HSI/HSE/PLL tests & MCO pin clock verification
 │
 ├── i2c_slave_rcv/                     # I2C Master/Slave blocking data reception
 ├── i2c_slave_rcv_it/                  # I2C non-blocking, interrupt-driven reception state machine
