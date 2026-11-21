@@ -1,5 +1,5 @@
 # Bare-Metal Peripheral Drivers-From-Scratch
-Bare-metal peripheral drivers (GPIO, SPI, I2C, USART) written from scratch in C for STM32F303K8 (ARM Cortex-M4) using RM0316, validated via Logic Analyzer &amp; ESP32 for master-slave communication. All low-level abstractions, memory maps, clock configurations, and interrupt service routines are developed directly from the **STM32F303 Reference Manual (RM0316)** and **ARMv7E-M Architecture Reference Manual**, eliminating any dependency on vendor HAL or middleware libraries.
+Bare-metal peripheral drivers (GPIO, SPI, I2C, USART) written from scratch in C for STM32F303K8 (ARM Cortex-M4) using RM0316, validated via Logic Analyzer &amp; ESP32 for master-slave communication. All low-level abstractions, memory maps, clock configurations, and interrupt service routines are developed directly from the manuals referring the section **References & Documentation** on the bottom of this README file, eliminating any dependency on vendor HAL or middleware libraries.
 
 ---
 
@@ -81,14 +81,13 @@ Writing driver code is only half of embedded systems engineering; proving that i
   * **Core `Registers` & `Disassembly`:** Auditing ARM Cortex-M4 core registers (`SP`, `LR`, `PC`, `xPSR`) and generated assembly instructions to verify `volatile` memory accesses, interrupt stacking, and compiler optimization behavior.
 
 ---
-
 ## Target Hardware & Development Environment
 
 | Category | Specification |
 | :--- | :--- |
 | **Microcontroller** | STMicroelectronics STM32F303K8T6 (ARM Cortex-M4F, 32-pin LQFP) |
 | **Development Board** | NUCLEO-F303K8 |
-| **Testbench Companion** | ESP32-WROOM-32 (Dual-Core Xtensa LX6 — SPI & I2C Slave Emulation) |
+| **Testbench Companion** | NodeMCU-32S (ESP32-WROOM-32, Dual-Core Xtensa LX6 — SPI, I2C & UART Slave Emulation) |
 | **Test & Measurement** | 8-Channel USB Logic Analyzer (24 MHz), PulseView / sigrok Protocol Decoders |
 | **Toolchain & Build** | `arm-none-eabi-gcc`, GNU Make, STM32CubeIDE, OpenOCD / ST-LINK GDB Server |
 
@@ -98,3 +97,6 @@ Writing driver code is only half of embedded systems engineering; proving that i
 * **ST RM0316:** *STM32F303xB/C/D/E, STM32F303x6/8, STM32F328x8, STM32F358xC, STM32F398xE Advanced ARM-based 32-bit MCUs Reference Manual*
 * **ST DS9866:** *STM32F303x6 / STM32F303x8 Datasheet*
 * **ARM DUI 0553:** *Cortex-M4 Devices Generic User Guide*
+* **Espressif ESP32-WROOM-32 Datasheet:** *ESP32-D0WDQ6 Dual-Core Wi-Fi & Bluetooth MCU Module Technical Specifications*
+* **NodeMCU-32S Hardware Reference:** *Ai-Thinker NodeMCU-32S Development Board Pinout & Electrical Characteristics*
+
