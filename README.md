@@ -1,8 +1,41 @@
 # Bare-metal-peripheral-drivers-from-scratch
 Bare-metal peripheral drivers (GPIO, SPI, I2C, USART) written from scratch in C for STM32F303K8 (ARM Cortex-M4) using RM0316, validated via Logic Analyzer &amp; ESP32 for master-slave communication.
-# Bare-Metal Embedded Peripheral Drivers & Protocol Stack (ARM Cortex-M4)
+# Bare-Metal Peripheral Drivers & Protocol Stack (ARM Cortex-M4)
+
+![Language](https://shields.io)
+![MCU](https://shields.io)
+![Testbench](https://shields.io)
+![Tools](https://shields.io)
 
 A production-oriented collection of **bare-metal device drivers** engineered from the ground up in Embedded C for the **STM32F303K8 (ARM Cortex-M4F)** microcontroller. All low-level abstractions, memory maps, clock configurations, and interrupt service routines are developed directly from the **STM32F303 Reference Manual (RM0316)** and **ARMv7E-M Architecture Reference Manual**, eliminating any dependency on vendor HAL or middleware libraries.
+
+---
+
+## Repository Architecture & Directory Guide
+
+The repository is organized to cleanly separate reusable hardware drivers, MCU startup files, application-level test cases, and external ESP32 slave testbench firmware:
+
+```text
+Bare-metal-peripheral-drivers-from-scratch/
+├── Drivers/                           # Core bare-metal peripheral drivers (inc/ & src/ for RCC, GPIO, EXTI, SPI, I2C, USART)
+├── Src/                               # Main STM32 application entry points & active driver tests
+├── Startup/                           # ARM Cortex-M4 startup assembly code & vector table definitions
+├── STM32F303K8TX_FLASH.ld             # Custom linker script defining Flash/SRAM memory regions & sections
+├── ESP32_Slave_Testbench/             # Arduino/C++ sketches for the ESP32 acting as an external SPI/I2C Slave
+│
+├── Testing_clock_configurations/      # SYSCLK, AHB/APB prescaler tests & MCO pin clock verification
+│
+├── i2c_slave_rcv/                     # I2C Master/Slave blocking data reception
+├── i2c_slave_rcv_it/                  # I2C non-blocking, interrupt-driven reception state machine
+├── i2c_slave_rcv_send/                # Bidirectional I2C Master-Slave command & data exchange
+├── i2c_slave_rcv_send_repeated_start/ # Atomic multi-phase transactions using Repeated Start (Sr)
+├── i2c_slave_sending_string/          # Multi-byte string transmission & buffer management over I2C
+│
+├── spi_rcv_msg_it/                    # Interrupt-driven asynchronous SPI message reception
+├── spi_sensor_read/                   # Command-response SPI register read emulation (dummy-byte clocking)
+│
+├── uart_case/                         # Interrupt-driven USART echo & character case-conversion application
+└── uart_only_send/                    # Blocking USART transmission & fractional baud-rate validation
 
 ---
 
