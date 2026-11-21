@@ -1,11 +1,5 @@
 # Bare-Metal Peripheral Drivers-From-Scratch
-Bare-metal peripheral drivers (GPIO, SPI, I2C, USART) written from scratch in C for STM32F303K8 (ARM Cortex-M4) using RM0316, validated via Logic Analyzer &amp; ESP32 for master-slave communication.
-
----
-
-# Bare-Metal Peripheral Drivers & Protocol Stack (ARM Cortex-M4)
-
-A production-oriented collection of **bare-metal device drivers** engineered from the ground up in Embedded C for the **STM32F303K8 (ARM Cortex-M4F)** microcontroller. All low-level abstractions, memory maps, clock configurations, and interrupt service routines are developed directly from the **STM32F303 Reference Manual (RM0316)** and **ARMv7E-M Architecture Reference Manual**, eliminating any dependency on vendor HAL or middleware libraries.
+Bare-metal peripheral drivers (GPIO, SPI, I2C, USART) written from scratch in C for STM32F303K8 (ARM Cortex-M4) using RM0316, validated via Logic Analyzer &amp; ESP32 for master-slave communication. All low-level abstractions, memory maps, clock configurations, and interrupt service routines are developed directly from the **STM32F303 Reference Manual (RM0316)** and **ARMv7E-M Architecture Reference Manual**, eliminating any dependency on vendor HAL or middleware libraries.
 
 ---
 
